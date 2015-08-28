@@ -41,6 +41,7 @@ class HasBoundValue(object):
 class FavouritesForm(forms.ModelForm, HasBoundValue):
     class Meta:
         model = Favourites
+        fields = '__all__'
         widgets = {
             'sport': forms.HiddenInput(),
         }
@@ -49,3 +50,4 @@ class FavouritesForm(forms.ModelForm, HasBoundValue):
 class RegularIntegersForm(forms.ModelForm, HasBoundValue):
     class Meta:
         model = RegularIntegers
+        fields = '__all__'

@@ -28,7 +28,6 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.test import TestCase
-from django.test.simple import DjangoTestSuiteRunner
 from django.utils.importlib import import_module
 try:
     from unittest.loader import defaultTestLoader
@@ -37,42 +36,15 @@ except ImportError:
     from unittest2.loader import defaultTestLoader
 
 
-class OldStyleDiscoveryDjangoTestSuiteRunner(DjangoTestSuiteRunner):
-    """A test suite runner that uses unittest2 test discovery.
-    Courtesy of @carljm."""
-
-    def build_suite(self, test_labels, extra_tests=None, **kwargs):
-        suite = None
-        discovery_root = settings.TEST_DISCOVERY_ROOT
-
-        if test_labels:
-            suite = defaultTestLoader.loadTestsFromNames(test_labels)
-            # if single named module has no tests, do discovery within it
-            if not suite.countTestCases() and len(test_labels) == 1:
-                suite = None
-                discovery_root = import_module(test_labels[0]).__path__[0]
-
-        if suite is None:
-            suite = defaultTestLoader.discover(
-                discovery_root,
-                top_level_dir=settings.BASE_PATH,
-                )
-
-        if extra_tests:
-            for test in extra_tests:
-                suite.addTest(test)
-
-        from django.test.simple import reorder_suite   # Django 1.5 and lower
-        return reorder_suite(suite, (TestCase,))
-
 try:
     from django.test.runner import DiscoverRunner
+
     class DiscoveryDjangoTestSuiteRunner(DiscoverRunner):
         """Unfortunately the new DiscoverRunner doesn't handle custom top level
         correctly."""
         def __init__(self, pattern=None, top_level=None,
-                    verbosity=1, interactive=True, failfast=False,
-                    **kwargs):
+                     verbosity=1, interactive=True, failfast=False,
+                     **kwargs):
             self.test_label_default = settings.TEST_DISCOVERY_ROOT
             if not top_level:
                 top_level = self.test_label_default
@@ -89,4 +61,33 @@ try:
             )
 
 except ImportError:
-    DiscoveryDjangoTestSuiteRunner = OldStyleDiscoveryDjangoTestSuiteRunner
+    from django.test.simple import DjangoTestSuiteRunner
+
+    class DiscoveryDjangoTestSuiteRunner(DjangoTestSuiteRunner):
+        """A test suite runner that uses unittest2 test discovery.
+        Courtesy of @carljm."""
+
+        def build_suite(self, test_labels, extra_tests=None, **kwargs):
+            suite = None
+            discovery_root = settings.TEST_DISCOVERY_ROOT
+
+            if test_labels:
+                suite = defaultTestLoader.loadTestsFromNames(test_labels)
+                # if single named module has no tests, do discovery within it
+                if not suite.countTestCases() and len(test_labels) == 1:
+                    suite = None
+                    discovery_root = import_module(test_labels[0]).__path__[0]
+
+            if suite is None:
+                suite = defaultTestLoader.discover(
+                    discovery_root,
+                    top_level_dir=settings.BASE_PATH,
+                    )
+
+            if extra_tests:
+                for test in extra_tests:
+                    suite.addTest(test)
+
+            # Django 1.5 and lower
+            from django.test.simple import reorder_suite
+            return reorder_suite(suite, (TestCase,))

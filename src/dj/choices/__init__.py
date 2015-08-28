@@ -60,7 +60,7 @@ class ChoicesEntry(int):
         # ugettext obscured that way so you can use choices in settings.py
         global ugettext
         if ugettext is unset:
-            from django.utils.translation import ugettext
+            from django.utils.translation import ugettext_lazy as ugettext
         return ugettext(self.raw)
 
     @property
@@ -154,7 +154,7 @@ class Choice(ChoicesEntry):
         self.group = None
 
     def __unicode__(self):
-        return self.desc
+        return six.text_type(self.desc)
 
     def __str__(self):
         result = self.__unicode__()
